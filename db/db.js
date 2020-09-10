@@ -4,13 +4,13 @@ const connection = mysql.createConnection({
 	host: "localhost",
 
 	// Your port
-	port: 8080,
+	port: 3306,
 
 	// Your username
-	user: "admin",
+	user: "root",
 
 	// Your password
-	password: "admin",
+	password: "Reset4now!",
 	database: "employee_tracker",
 });
 

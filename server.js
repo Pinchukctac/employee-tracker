@@ -6,7 +6,7 @@ const mysql = require("mysql");
 
 
 // prompt and promise
-const askQ = function() {
+ function askQuestion() {
   inquirer
     .prompt({
       type: "list",
@@ -20,23 +20,24 @@ const askQ = function() {
         "add department",
         "add role",
         "update employee role",
-        "remove employee"
+        "remove employee",
+        "Cancel"
       ]
     })
     .then(function(answer) {
       console.log(answer);
 
-      switch (answer.startQ) {
+      switch (answer.start) {
         case "view all employees":
-          viewallemployees();
+          viewemployees();
           break;
 
         case "view all roles":
-          viewallroles();
+          viewroles();
           break;
 
         case "view all departments":
-          viewalldepartments();
+          viewdepartments();
           break;
 
         case "add employee":
@@ -54,41 +55,65 @@ const askQ = function() {
         case "add role":
           addRole();
           break;
+
+        case "Cancel":
+          connection.end();
+          break;
       }
     });
 };
-askQ();
 
 //  view all departments currently in the database
-function viewalldepartments() {
+function viewdepartments() {
   connection.query("SELECT * FROM department", function(err, answer) {
-    console.log("\n Departments Retrieved from Database \n");
+    if (err) throw err;
     console.table(answer);
+    askQuestion();
   });
-  askQ();
 }
 
 // view all employee roles currently in the database
-function viewallroles() {
+function viewroles() {
   connection.query("SELECT * FROM role", function(err, answer) {
-    console.log("\n Roles Retrieved from Database \n");
+    if (err) throw err;
     console.table(answer);
+    askQuestion();
   });
-  askQ();
 }
 
 // view all employees currently in the database
-function viewallemployees() {
-  console.log("retrieving employess from database");
+function viewemployees() {
   var query =
     "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department on role.department_id = department.id;";
   connection.query(query, function(err, answer) {
-    console.log("\n Employees retrieved from Database \n");
+    if (err) throw err;
     console.table(answer);
+    askQuestion();
   });
-  askQ();
 }
 
+// add a new department into the database
+function addDepartment() {
+  inquirer
+    .prompt({
+      type: "input",
+      message: "enter department name",
+      name: "dept"
+    })
+    .then(function(answer) {
+      connection.query(
+        "INSERT INTO department SET ?",
+        {
+          name: answer.dept
+        },
+        function(err, answer) {
+          if (err) throw err;
+          console.table(answer);
+        askQuestion();
+        }
+      );
+    })
+  };
 // add a new employee to database
 function addEmployee() {
   inquirer
@@ -118,12 +143,11 @@ function addEmployee() {
             throw err;
           }
           console.table(answer);
+          askQuestion();
         }
       );
-      askQ();
     });
 }
-
 
 function updateEmpRole() {
   let allemployee = [];
@@ -164,42 +188,19 @@ function updateEmpRole() {
           "UPDATE employee SET role_id = ? WHERE id = ?",
           [idToUpdate.role_id, idToUpdate.employeeId],
           function(err, data) {
-            askQ();
+            askQuestion();
           }
         );
       });
   });
 }
 
-// add a new department into the database
-function addDepartment() {
-  inquirer
-    .prompt({
-      type: "input",
-      message: "enter department name",
-      name: "dept"
-    })
-    .then(function(answer) {
-      connection.query(
-        "INSERT INTO department SET ?",
-        {
-          name: answer.dept
-        },
-        function(err, answer) {
-          if (err) {
-            throw err;
-          }
-        }
-      ),
-        console.table(answer);
-      askQ();
-    });
-}
 
 // add a new role
 function addRole() {
-  inquirer
-    .prompt([
+  connection.query("SELECT * FROM department", function(err, results){
+    if (err) throw err;
+  inquirer.prompt([
       {
         type: "input",
         message: "enter employee title",
@@ -213,24 +214,34 @@ function addRole() {
       {
         type: "input",
         message: "enter employee department id",
-        name: "addDepId"
+        name: "addDepId",
+        choices: function() {
+          var choiceArray = [];
+          for (var i = 0; i < results.length; i++) {
+            choiceArray.push({name: results[i].name, value: results[i].id});
+          }
+          return choiceArray;
+        }
       }
     ])
     .then(function(answer) {
       connection.query(
-        "INSERT INTO role SET ?",
-        {
-          title: answer.addtitle,
-          salary: answer.addsalary,
-          department_id: answer.addDepId
-        },
+        "INSERT INTO roles(title, salary, department_id) values(?,?,?)",
+        [
+          answer.addtitle,
+          answer.addsalary,
+          answer.addDepId
+        ],
         function(err, answer) {
-          if (err) {
-            throw err;
-          }
+          if (err) throw err;
+          
           console.table(answer);
+          askQuestion();
         }
       );
-      askQ();
-    });
-}
+    })
+  })
+};
+
+
+askQuestion();
