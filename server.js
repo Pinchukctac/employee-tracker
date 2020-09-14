@@ -74,7 +74,7 @@ function viewdepartments() {
 
 // view all employee roles currently in the database
 function viewroles() {
-  connection.query("SELECT * FROM role", function(err, answer) {
+  connection.query("SELECT * FROM roles", function(err, answer) {
     if (err) throw err;
     console.table(answer);
     askQuestion();
@@ -84,7 +84,7 @@ function viewroles() {
 // view all employees currently in the database
 function viewemployees() {
   var query =
-    "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department on role.department_id = department.id;";
+    "SELECT employee.id, employee.first_name, employee.last_name, roles.title, department.name AS department, roles.salary FROM employee LEFT JOIN roles ON employee.role_id = roles.id LEFT JOIN department on roles.department_id = department.id;";
   connection.query(query, function(err, answer) {
     if (err) throw err;
     console.table(answer);
@@ -112,8 +112,8 @@ function addDepartment() {
         askQuestion();
         }
       );
-    })
-  };
+  })
+};
 // add a new employee to database
 function addEmployee() {
   inquirer
@@ -153,28 +153,37 @@ function updateEmpRole() {
   let allemployee = [];
   connection.query("SELECT * FROM employee", function(err, answer) {
     // console.log(answer);
+    if (err) throw err;
     for (let i = 0; i < answer.length; i++) {
       let employeeString =
         answer[i].id + " " + answer[i].first_name + " " + answer[i].last_name;
       allemployee.push(employeeString);
     }
- 
-
-    inquirer
-      .prompt([
+    inquirer.prompt([
         {
           type: "list",
           name: "updateEmpRole",
           message: "select employee to update role",
           choices: allemployee
         },
-        {
+      ])
+      .then(function(res,){
+        console.log(res);
+        connection.query("SELECT title, id FROM roles", function(err, data) {
+            if (err) throw err;
+            console.log(data);
+        inquirer.prompt([{    
           type: "list",
           message: "select new role",
-          choices: ["manager", "employee"],
+          choices: function() {
+            var choiceArray = [];
+            for (var i = 0; i < data.length; i++) {
+              choiceArray.push({name: data[i].first_name + " " + data[i].last_name, value: data[i].id});
+            }
+            return choiceArray;
+          },
           name: "newrole"
-        }
-      ])
+        }])
       .then(function(answer) {
         console.log("about to update", answer);
         const idToUpdate = {};
@@ -189,13 +198,13 @@ function updateEmpRole() {
           [idToUpdate.role_id, idToUpdate.employeeId],
           function(err, data) {
             askQuestion();
-          }
-        );
-      });
+          })
+        })
+      }
+    );
   });
+})
 }
-
-
 // add a new role
 function addRole() {
   connection.query("SELECT * FROM department", function(err, results){
@@ -212,8 +221,8 @@ function addRole() {
         name: "addsalary"
       },
       {
-        type: "input",
-        message: "enter employee department id",
+        type: "list",
+        message: "What department is the role in?",
         name: "addDepId",
         choices: function() {
           var choiceArray = [];
@@ -242,6 +251,5 @@ function addRole() {
     })
   })
 };
-
 
 askQuestion();
