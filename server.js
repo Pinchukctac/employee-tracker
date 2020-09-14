@@ -178,7 +178,7 @@ function updateEmpRole() {
           choices: function() {
             var choiceArray = [];
             for (var i = 0; i < data.length; i++) {
-              choiceArray.push({name: data[i].first_name + " " + data[i].last_name, value: data[i].id});
+              choiceArray.push({name: data[i].title, value: data[i].id});
             }
             return choiceArray;
           },
@@ -187,15 +187,11 @@ function updateEmpRole() {
       .then(function(answer) {
         console.log("about to update", answer);
         const idToUpdate = {};
-        idToUpdate.employeeId = parseInt(answer.updateEmpRole.split(" ")[0]);
-        if (answer.newrole === "manager") {
-          idToUpdate.role_id = 1;
-        } else if (answer.newrole === "employee") {
-          idToUpdate.role_id = 2;
-        }
+        idToUpdate.employeeId = parseInt(res.updateEmpRole.split(" ")[0]);
+       
         connection.query(
           "UPDATE employee SET role_id = ? WHERE id = ?",
-          [idToUpdate.role_id, idToUpdate.employeeId],
+          [answer.newrole, idToUpdate.employeeId],
           function(err, data) {
             askQuestion();
           })
