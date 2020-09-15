@@ -20,7 +20,6 @@ const mysql = require("mysql");
         "add department",
         "add role",
         "update employee role",
-        "remove employee",
         "Cancel"
       ]
     })
